@@ -3,8 +3,38 @@ use strict;
 use warnings;
 use 5.008001;
 our $VERSION = '0.01';
+use DBI;
+use Module::Load ();
+use Data::OptList ();
 
+sub setup {
+    my $class = shift;
 
+    # setup plugins
+    no strict 'refs';
+    unshift @{"${class}::ISA"},     'DBI';
+    unshift @{"${class}::st::ISA"}, 'DBI::st';
+    unshift @{"${class}::db::ISA"}, 'DBI::db';
+    unshift @{"${class}::dr::ISA"}, 'drI::dr';
+    return;
+}
+
+sub load_plugin {
+    my ($class, $plugin, $opt) = @_;
+    $plugin = $plugin =~ s/^\+// ? $plugin : "DBIx::Pluggable::$plugin";
+    Module::Load::load($plugin);
+    $plugin->init($class, $opt || +{});
+    return;
+}
+
+sub load_plugins {
+    my $class = shift;
+    my $opts = Data::OptList::mkopt(\@_);
+    for (@$opts) {
+        $class->load_plugin(@$_);
+    }
+    return;
+}
 
 1;
 __END__
@@ -17,7 +47,14 @@ DBIx::Pluggable -
 
 =head1 SYNOPSIS
 
-  use DBIx::Pluggable;
+    package MyApp::DBI;
+    use parent qw/DBIx::Pluggable/;
+    __PACKAGE__->setup();
+    __PACKAGE__->load_plugins(
+        qw/
+            TransactionManager
+        /
+    );
 
 =head1 DESCRIPTION
 
