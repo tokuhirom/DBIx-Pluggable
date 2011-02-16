@@ -3,7 +3,7 @@ use warnings;
 use utf8;
 
 package DBIx::Pluggable::VerboseError;
-use Carp::Clan qw{^(DBI::|PJP::DBI::|DBD::)};
+use Carp::Clan qw{^(DBIx?::|DBD::)};
 use Data::Dumper ();
 
 sub init {
